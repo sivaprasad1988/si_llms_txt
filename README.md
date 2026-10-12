@@ -1,6 +1,6 @@
-# si_llms_txt – LLMs.txt Generator
+# LLMs.txt & Markdown for AI (si_llms_txt)
 
-Serves [llms.txt](https://llmstxt.org/) files and a Markdown version of every page, per site language.
+Serves llms.txt, llms-full.txt and a Markdown version of every page per language for AI agents and crawlers – generated from the rendered page or written by editors. Optional EXT:news support.
 
 | URL | Content |
 |-----|---------|

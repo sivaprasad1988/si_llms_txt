@@ -1,6 +1,6 @@
 categories:
   sillmstxt:
-    label: 'LLMs.txt Generator'
+    label: 'LLMs.txt & Markdown for AI'
 
 settings:
   sillmstxt.articleDoktypes:

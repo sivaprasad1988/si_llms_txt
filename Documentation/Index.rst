@@ -1,8 +1,8 @@
 ..  _start:
 
-================================
-LLMs.txt Generator (si_llms_txt)
-================================
+==========================
+LLMs.txt & Markdown for AI
+==========================
 
 :Extension key:
     si_llms_txt
