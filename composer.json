@@ -1,7 +1,7 @@
 {
     "name": "woit/si-llms-txt",
     "type": "typo3-cms-extension",
-    "description": "Serves llms.txt, llms-full.txt and a Markdown version of every page per language for AI agents and crawlers – generated from the rendered page or written by editors. Optional EXT:news support.",
+    "description": "LLMs.txt & Markdown for AI",
     "license": [
         "GPL-2.0-or-later"
     ],
