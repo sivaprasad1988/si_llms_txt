@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+	<file source-language="en" datatype="plaintext" original="EXT:si_llms_txt/Resources/Private/Language/locallang_db.xlf">
+		<body>
+			<trans-unit id="pages.tab">
+				<source>LLM</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_exclude">
+				<source>Exclude from llms.txt</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_exclude.description">
+				<source>Page is left out of llms.txt and llms-full.txt; its .md returns 404</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_priority">
+				<source>LLM priority (0-100)</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_priority.description">
+				<source>Higher values come first among pages with the same parent</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_description">
+				<source>LLM description</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_description.description">
+				<source>Short text next to the link in llms.txt (fallback: meta description)</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_markdown">
+				<source>LLM Markdown</source>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_markdown.description">
+				<source>Markdown served at the .md URL of this page instead of the generated version. Leave empty to generate it from the page content</source>
+			</trans-unit>
+			<trans-unit id="site_language.sillmstxtIntro">
+				<source>llms.txt intro (Markdown)</source>
+			</trans-unit>
+			<trans-unit id="site_language.sillmstxtIntro.description">
+				<source>Shown below the site title in llms.txt of this language, e.g. a &gt; summary line and key facts</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

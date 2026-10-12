@@ -1,0 +1,35 @@
+categories:
+  sillmstxt:
+    label: 'LLMs.txt Generator'
+
+settings:
+  sillmstxt.articleDoktypes:
+    label: 'Article page types'
+    description: 'Comma-separated doktypes listed under "Articles" (12 = just_news)'
+    category: sillmstxt
+    type: string
+    default: '12'
+  sillmstxt.contentElementId:
+    label: 'Content element id'
+    description: 'id of the HTML element whose content becomes the Markdown of a page'
+    category: sillmstxt
+    type: string
+    default: 'wrapper'
+  sillmstxt.loopbackUrl:
+    label: 'Loopback URL'
+    description: 'How the server reaches itself to build llms-full.txt (Host header comes from the site base)'
+    category: sillmstxt
+    type: string
+    default: 'http://127.0.0.1'
+  sillmstxt.news.detailPid:
+    label: 'EXT:news detail page'
+    description: 'Page with the news detail plugin. 0 = no tx_news support (only used when EXT:news is installed)'
+    category: sillmstxt
+    type: int
+    default: 0
+  sillmstxt.news.storagePids:
+    label: 'EXT:news storage folders'
+    description: 'Comma-separated page uids with news records. Empty = all news within the page tree of the site'
+    category: sillmstxt
+    type: string
+    default: ''

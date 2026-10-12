@@ -1,0 +1,17 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Woit\SiLlmsTxt\:
+    resource: '../Classes/*'
+
+  cache.sillmstxt:
+    class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+    factory: ['@TYPO3\CMS\Core\Cache\CacheManager', 'getCache']
+    arguments: ['sillmstxt']
+
+  Woit\SiLlmsTxt\Service\LlmsTxtBuilder:
+    arguments:
+      $cache: '@cache.sillmstxt'

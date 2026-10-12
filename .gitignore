@@ -1,0 +1,7 @@
+/Documentation-GENERATED-temp/
+/vendor/
+/public/
+/var/
+/composer.lock
+.DS_Store
+.idea/

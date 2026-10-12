@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+	<file source-language="en" target-language="de" datatype="plaintext" original="EXT:si_llms_txt/Resources/Private/Language/locallang_db.xlf">
+		<body>
+			<trans-unit id="pages.tab">
+				<source>LLM</source>
+				<target>LLM</target>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_exclude">
+				<source>Exclude from llms.txt</source>
+				<target>Von llms.txt ausschließen</target>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_exclude.description">
+				<source>Page is left out of llms.txt and llms-full.txt; its .md returns 404</source>
+				<target>Seite fehlt in llms.txt und llms-full.txt; ihre .md-Version liefert 404</target>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_priority">
+				<source>LLM priority (0-100)</source>
+				<target>LLM-Priorität (0-100)</target>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_priority.description">
+				<source>Higher values come first among pages with the same parent</source>
+				<target>Höhere Werte stehen bei Seiten mit gleicher Elternseite weiter vorn</target>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_description">
+				<source>LLM description</source>
+				<target>LLM-Beschreibung</target>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_description.description">
+				<source>Short text next to the link in llms.txt (fallback: meta description)</source>
+				<target>Kurztext neben dem Link in llms.txt (Fallback: Meta-Description)</target>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_markdown">
+				<source>LLM Markdown</source>
+				<target>LLM-Markdown</target>
+			</trans-unit>
+			<trans-unit id="pages.tx_sillmstxt_markdown.description">
+				<source>Markdown served at the .md URL of this page instead of the generated version. Leave empty to generate it from the page content</source>
+				<target>Markdown, das unter der .md-URL dieser Seite statt der generierten Fassung ausgeliefert wird. Leer lassen, um es aus dem Seiteninhalt zu erzeugen</target>
+			</trans-unit>
+			<trans-unit id="site_language.sillmstxtIntro">
+				<source>llms.txt intro (Markdown)</source>
+				<target>llms.txt-Einleitung (Markdown)</target>
+			</trans-unit>
+			<trans-unit id="site_language.sillmstxtIntro.description">
+				<source>Shown below the site title in llms.txt of this language, e.g. a &gt; summary line and key facts</source>
+				<target>Steht unter dem Seitentitel in der llms.txt dieser Sprache, z. B. eine &gt; Zusammenfassung und Kernfakten</target>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

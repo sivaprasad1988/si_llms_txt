@@ -1,0 +1,43 @@
+{
+    "name": "woit/si-llms-txt",
+    "type": "typo3-cms-extension",
+    "description": "LLMs.txt Generator: llms.txt, llms-full.txt and a Markdown version of every page per language",
+    "license": [
+        "GPL-2.0-or-later"
+    ],
+    "keywords": [
+        "TYPO3 CMS",
+        "llms.txt",
+        "markdown",
+        "AI"
+    ],
+    "homepage": "https://github.com/sivaprasad1988/si_llms_txt",
+    "support": {
+        "issues": "https://github.com/sivaprasad1988/si_llms_txt/issues",
+        "source": "https://github.com/sivaprasad1988/si_llms_txt"
+    },
+    "authors": [
+        {
+            "name": "Siva",
+            "email": "siva@webofficeit.com"
+        }
+    ],
+    "require": {
+        "typo3/cms-core": "^14.0",
+        "typo3/cms-frontend": "^14.0",
+        "league/html-to-markdown": "^5.1"
+    },
+    "suggest": {
+        "georgringer/news": "News records in llms.txt, llms-full.txt and as .md (set sillmstxt.news.detailPid)"
+    },
+    "autoload": {
+        "psr-4": {
+            "Woit\\SiLlmsTxt\\": "Classes/"
+        }
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "si_llms_txt"
+        }
+    }
+}
