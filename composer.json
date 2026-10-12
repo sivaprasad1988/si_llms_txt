@@ -23,8 +23,8 @@
         }
     ],
     "require": {
-        "typo3/cms-core": "^14.0",
-        "typo3/cms-frontend": "^14.0",
+        "typo3/cms-core": "^14.3",
+        "typo3/cms-frontend": "^14.3",
         "league/html-to-markdown": "^5.1"
     },
     "suggest": {
