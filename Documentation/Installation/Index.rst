@@ -6,6 +6,13 @@ Installation
 
 ..  _installation-composer:
 
+..  important::
+    The extension supports **Composer mode only**. It depends on
+    `league/html-to-markdown <https://github.com/thephpleague/html-to-markdown>`__,
+    which is installed by Composer. Installations without Composer (classic
+    mode) are not supported: :file:`llms.txt` would work, the Markdown
+    conversion of pages would fail.
+
 Install the package
 ===================
 

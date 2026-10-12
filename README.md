@@ -14,6 +14,8 @@ Every included HTML page gets `<link rel="alternate" type="text/markdown" href="
 
 ## Setup
 
+**Composer mode only.** The extension needs `league/html-to-markdown`, which Composer installs. Installations without Composer (classic mode) are not supported.
+
 1. Install the package from [Packagist](https://packagist.org/packages/woit/si-llms-txt), then run `typo3 extension:setup`:
    ```bash
    composer require woit/si-llms-txt

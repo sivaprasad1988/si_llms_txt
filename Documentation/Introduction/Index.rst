@@ -54,4 +54,4 @@ Requirements
 *   PHP 8.2 or higher
 *   `league/html-to-markdown <https://github.com/thephpleague/html-to-markdown>`__
     (installed by Composer)
-*   Composer mode
+*   Composer mode (classic mode is not supported, see :ref:`installation`)
