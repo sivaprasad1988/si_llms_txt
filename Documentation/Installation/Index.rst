@@ -12,11 +12,12 @@ Install the package
 ..  code-block:: bash
     :caption: In the project root
 
-    composer config repositories.si-llms-txt vcs https://github.com/sivaprasad1988/si_llms_txt.git
-    composer require woit/si-llms-txt:^1.0
+    composer require woit/si-llms-txt
     vendor/bin/typo3 extension:setup
     vendor/bin/typo3 cache:flush
 
+The package is available on
+`Packagist <https://packagist.org/packages/woit/si-llms-txt>`__.
 :bash:`extension:setup` adds the page fields and the cache tables
 ``cache_sillmstxt`` and ``cache_sillmstxt_tags``.
 

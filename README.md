@@ -14,10 +14,9 @@ Every included HTML page gets `<link rel="alternate" type="text/markdown" href="
 
 ## Setup
 
-1. Add the repository and require the package, then run `typo3 extension:setup`:
+1. Install the package from [Packagist](https://packagist.org/packages/woit/si-llms-txt), then run `typo3 extension:setup`:
    ```bash
-   composer config repositories.si-llms-txt vcs https://github.com/sivaprasad1988/si_llms_txt.git
-   composer require woit/si-llms-txt:^1.0
+   composer require woit/si-llms-txt
    vendor/bin/typo3 extension:setup
    ```
 2. Add the Site Set `woit/si-llms-txt` to the site dependencies
