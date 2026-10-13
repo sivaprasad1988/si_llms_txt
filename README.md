@@ -106,6 +106,10 @@ If a page cannot be fetched for llms-full.txt, the file is kept for 5 minutes on
 Full documentation in TYPO3 format: [`Documentation/`](Documentation/Index.rst). Render it with
 `docker run --rm -v $(pwd):/project ghcr.io/typo3-documentation/render-guides:latest --config=Documentation`.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
+
 ## License
 
 GPL-2.0-or-later, see [LICENSE.md](LICENSE.md).
