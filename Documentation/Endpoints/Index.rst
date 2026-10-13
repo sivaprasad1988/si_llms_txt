@@ -17,6 +17,8 @@ with the languages ``/de/`` (default) and ``/en/``:
         -   Index of the default language (same as :file:`/de/llms.txt`)
     *   -   :file:`/de/llms.txt`, :file:`/en/llms.txt`
         -   Index of one language
+    *   -   :file:`/llms-full.txt`
+        -   Full file of the default language (same as :file:`/de/llms-full.txt`)
     *   -   :file:`/de/llms-full.txt`
         -   Markdown of all listed pages (and news) of one language
     *   -   :file:`/de/<page>.md`
@@ -26,6 +28,27 @@ with the languages ``/de/`` (default) and ``/en/``:
 
 All text responses use ``X-Robots-Tag: noindex`` so that search engines do
 not index them as duplicates of the HTML pages.
+
+..  _endpoints-discovery:
+
+Discovery links
+===============
+
+As recommended by `llmstxt.org <https://llmstxt.org/>`__, every included page
+points to its Markdown version and to the :file:`llms.txt` of its language,
+both in the HTML ``<head>`` and as HTTP ``Link`` header:
+
+..  code-block:: html
+
+    <link rel="alternate" type="text/markdown" title="Markdown" href="https://example.com/de/pricing.md">
+    <link rel="describedby" type="text/plain" href="https://example.com/de/llms.txt">
+
+..  code-block:: text
+
+    Link: <https://example.com/de/pricing.md>; rel="alternate"; type="text/markdown", <https://example.com/de/llms.txt>; rel="describedby"
+
+The Markdown responses themselves get only the ``describedby`` link.
+Excluded pages get neither.
 
 ..  _endpoints-llms-txt:
 

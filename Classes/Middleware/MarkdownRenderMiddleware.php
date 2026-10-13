@@ -11,6 +11,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use TYPO3\CMS\Frontend\Page\PageInformation;
+use Woit\SiLlmsTxt\Service\DiscoveryLinks;
 use Woit\SiLlmsTxt\Service\LlmsTxtBuilder;
 use Woit\SiLlmsTxt\Service\MarkdownConverter;
 use Woit\SiLlmsTxt\Service\NewsCollector;
@@ -19,6 +20,7 @@ use Woit\SiLlmsTxt\Service\SiteConfig;
 /**
  * Answers a ".md" request for the resolved page: the editor field "LLM Markdown" if filled,
  * otherwise the rendered page converted to Markdown.
+ * HTML pages and Markdown responses get an HTTP Link header (alternate / describedby, see llmstxt.org).
  */
 final class MarkdownRenderMiddleware implements MiddlewareInterface
 {
@@ -26,6 +28,7 @@ final class MarkdownRenderMiddleware implements MiddlewareInterface
         private readonly LlmsTxtBuilder $builder,
         private readonly MarkdownConverter $converter,
         private readonly NewsCollector $newsCollector,
+        private readonly DiscoveryLinks $discoveryLinks,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -33,8 +36,10 @@ final class MarkdownRenderMiddleware implements MiddlewareInterface
         $site = $request->getAttribute('site');
         $language = $request->getAttribute('language');
         $pageInformation = $request->getAttribute('frontend.page.information');
-        if (!$request->getAttribute(MarkdownSuffixMiddleware::MARKDOWN)
-            || !SiteConfig::isEnabled($site)
+        if (!$request->getAttribute(MarkdownSuffixMiddleware::MARKDOWN)) {
+            return $this->withLinkHeader($request, $handler->handle($request), true);
+        }
+        if (!SiteConfig::isEnabled($site)
             || !$language instanceof SiteLanguage
             || !$pageInformation instanceof PageInformation
         ) {
@@ -53,7 +58,7 @@ final class MarkdownRenderMiddleware implements MiddlewareInterface
 
         $editorMarkdown = trim((string)($page['tx_sillmstxt_markdown'] ?? ''));
         if ($editorMarkdown !== '') {
-            return $this->markdownResponse($this->builder->pageDocument($page, $site, $language, $editorMarkdown, 'editor'));
+            return $this->withLinkHeader($request, $this->markdownResponse($this->builder->pageDocument($page, $site, $language, $editorMarkdown, 'editor')), false);
         }
 
         $response = $handler->handle($request);
@@ -61,7 +66,7 @@ final class MarkdownRenderMiddleware implements MiddlewareInterface
             return $response;
         }
         $body = $this->converter->fromHtml((string)$response->getBody(), SiteConfig::contentElementId($site), $site->getBase());
-        return $this->markdownResponse($this->builder->pageDocument($page, $site, $language, $body, 'generated'));
+        return $this->withLinkHeader($request, $this->markdownResponse($this->builder->pageDocument($page, $site, $language, $body, 'generated')), false);
     }
 
     /** EXT:news detail page: Markdown of the requested news record, 404 without (or with an invisible) record. */
@@ -79,7 +84,19 @@ final class MarkdownRenderMiddleware implements MiddlewareInterface
             return $response;
         }
         $body = $this->converter->fromHtml((string)$response->getBody(), SiteConfig::contentElementId($site), $site->getBase());
-        return $this->markdownResponse($this->builder->newsDocument($news, $site, $language, $body));
+        return $this->withLinkHeader($request, $this->markdownResponse($this->builder->newsDocument($news, $site, $language, $body)), false);
+    }
+
+    /** HTML page: alternate + describedby; Markdown response: describedby only. */
+    private function withLinkHeader(ServerRequestInterface $request, ResponseInterface $response, bool $isHtml): ResponseInterface
+    {
+        if ($response->getStatusCode() !== 200
+            || ($isHtml && !str_contains($response->getHeaderLine('Content-Type'), 'text/html'))
+        ) {
+            return $response;
+        }
+        $links = $this->discoveryLinks->forRequest($request);
+        return $links === null ? $response : $response->withAddedHeader('Link', DiscoveryLinks::header($links, $isHtml));
     }
 
     private function markdownResponse(string $markdown): ResponseInterface

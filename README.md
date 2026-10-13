@@ -6,11 +6,14 @@ Serves llms.txt, llms-full.txt and a Markdown version of every page per language
 |-----|---------|
 | `/llms.txt` | Index of the default language |
 | `/<lang>/llms.txt` | Index of one language: pages grouped by top-level page, articles (newest first), links to other languages |
+| `/llms-full.txt` | Full Markdown of the default language |
 | `/<lang>/llms-full.txt` | Full Markdown of all pages of one language |
 | `/<page>.md`, `/<lang>/index.md` (root page) | One page as Markdown with YAML frontmatter |
 
 Untranslated pages (strict fallback) are left out and their `.md` returns 404.
-Every included HTML page gets `<link rel="alternate" type="text/markdown" href="….md">`.
+Every included page points to its `.md` (`rel="alternate" type="text/markdown"`) and to the `llms.txt` of its
+language (`rel="describedby"`), as `<link>` in the HTML head and as HTTP `Link` header, as recommended by
+[llmstxt.org](https://llmstxt.org/). `.md` responses get the `describedby` header.
 
 ## Setup
 

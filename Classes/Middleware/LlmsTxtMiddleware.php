@@ -14,7 +14,7 @@ use Woit\SiLlmsTxt\Service\LlmsTxtBuilder;
 use Woit\SiLlmsTxt\Service\SiteConfig;
 
 /**
- * /llms.txt (default language), <language base>/llms.txt and <language base>/llms-full.txt
+ * /llms.txt and /llms-full.txt (default language), <language base>/llms.txt and <language base>/llms-full.txt
  */
 final class LlmsTxtMiddleware implements MiddlewareInterface
 {
@@ -30,8 +30,12 @@ final class LlmsTxtMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         }
         /** @var Site $site */
-        if ($uri->getPath() === rtrim($site->getBase()->getPath(), '/') . '/' . LlmsTxtBuilder::INDEX_FILE) {
+        $sitePath = rtrim($site->getBase()->getPath(), '/') . '/';
+        if ($uri->getPath() === $sitePath . LlmsTxtBuilder::INDEX_FILE) {
             return $this->textResponse($this->builder->index($site, $site->getDefaultLanguage()));
+        }
+        if ($uri->getPath() === $sitePath . LlmsTxtBuilder::FULL_FILE) {
+            return $this->textResponse($this->builder->full($site, $site->getDefaultLanguage()));
         }
         foreach ($site->getLanguages() as $language) {
             $base = $language->getBase();

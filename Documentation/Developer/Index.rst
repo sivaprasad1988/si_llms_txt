@@ -46,7 +46,10 @@ the request on.
 
 The event listener ``AddMarkdownAlternateLink``
 (``AfterCacheableContentIsGeneratedEvent``) adds the ``<link rel="alternate">``
-tag when a page is rendered; the result is part of the page cache.
+and ``<link rel="describedby">`` tags when a page is rendered; the result is
+part of the page cache. The HTTP ``Link`` header with the same relations is
+added by ``MarkdownRenderMiddleware`` on every request (see
+:ref:`endpoints-discovery`).
 
 ..  _developer-classes:
 
@@ -70,6 +73,9 @@ Classes
         -   HTML → Markdown with league/html-to-markdown; removes navigation,
             breadcrumbs, asides, forms, buttons, scripts, decorative images;
             makes links absolute
+    *   -   ``Service\DiscoveryLinks``
+        -   ``alternate`` and ``describedby`` links of a page, as HTML tags or
+            HTTP ``Link`` header
     *   -   ``Service\MarkdownUrl``
         -   Page URL ↔ ``.md`` URL
     *   -   ``Service\SiteConfig``
