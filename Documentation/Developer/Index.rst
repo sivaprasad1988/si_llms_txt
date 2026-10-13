@@ -71,8 +71,9 @@ Classes
         -   News records of EXT:news (optional)
     *   -   ``Service\MarkdownConverter``
         -   HTML → Markdown with league/html-to-markdown; removes navigation,
-            breadcrumbs, asides, forms, buttons, scripts, decorative images;
-            makes links absolute
+            breadcrumbs, asides, forms, buttons, scripts, decorative images
+            and links without text; accordion titles and ``<summary>``
+            become h3 headings; makes links absolute
     *   -   ``Service\DiscoveryLinks``
         -   ``alternate`` and ``describedby`` links of a page, as HTML tags or
             HTTP ``Link`` header

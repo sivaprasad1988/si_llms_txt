@@ -41,6 +41,46 @@ final class MarkdownConverter
             }
             $span->parentNode?->replaceChild($paragraph, $span);
         }
+        // Links without href are script widgets (accordion titles, tabs); they would stay as raw HTML.
+        // An accordion title (role="button") becomes an h3 above its answer and its list is unwrapped
+        // (an answer paragraph inside a list item loses its indentation); anything else becomes plain text.
+        $accordionLists = [];
+        foreach (iterator_to_array($xpath->query('.//a[not(@href)]', $root)) as $link) {
+            if ($link->getAttribute('role') === 'button') {
+                $replacement = $dom->createElement('h3');
+                $replacement->appendChild($dom->createTextNode(trim($link->textContent)));
+                $item = $link->parentNode;
+                if ($item instanceof \DOMElement && $item->nodeName === 'li' && $item->parentNode instanceof \DOMElement) {
+                    $accordionLists[spl_object_id($item->parentNode)] = $item->parentNode;
+                }
+            } else {
+                $replacement = $dom->createElement('span');
+                while ($link->firstChild !== null) {
+                    $replacement->appendChild($link->firstChild);
+                }
+            }
+            $link->parentNode?->replaceChild($replacement, $link);
+        }
+        // <details><summary>Question</summary>Answer</details>: the same as an accordion
+        foreach (iterator_to_array($xpath->query('.//summary', $root)) as $summary) {
+            $heading = $dom->createElement('h3');
+            $heading->appendChild($dom->createTextNode(trim($summary->textContent)));
+            $summary->parentNode?->replaceChild($heading, $summary);
+        }
+        // Links without text or image (icon links: share buttons, card overlays) would become "[](…)"
+        foreach (iterator_to_array($xpath->query('.//a[@href][not(.//img)]', $root)) as $link) {
+            if (trim($link->textContent) === '') {
+                $link->parentNode?->removeChild($link);
+            }
+        }
+        foreach ($accordionLists as $list) {
+            foreach (iterator_to_array($list->childNodes) as $item) {
+                while ($item->firstChild !== null) {
+                    $list->parentNode?->insertBefore($item->firstChild, $list);
+                }
+            }
+            $list->parentNode?->removeChild($list);
+        }
         $origin = $siteBase->withPath('')->withQuery('')->withFragment('');
         foreach (iterator_to_array($xpath->query('.//a[@href]|.//img[@src]', $root)) as $node) {
             $attribute = $node->nodeName === 'a' ? 'href' : 'src';
@@ -108,6 +148,9 @@ final class MarkdownConverter
         // Leading spaces before text come from inline whitespace; list indents (before - * + 1.) stay.
         $markdown = (string)preg_replace('/^ {1,3}(?=[^\s\-*+0-9])/m', '', $markdown);
         $markdown = $this->unindentParagraphs($markdown);
+        $markdown = (string)preg_replace('/^(#{1,6}) {2,}/m', '$1 ', $markdown);
+        // Template whitespace inside link texts: "[ Label ](…)" -> "[Label](…)"
+        $markdown = (string)preg_replace('/\[[ \t]+([^\]\n]*?)[ \t]*\]\(|\[([^\]\n]*?)[ \t]+\]\(/', '[$1$2](', $markdown);
         // league/html-to-markdown escapes "&" (TextConverter, ImageConverter); &lt; and &gt; stay escaped.
         $markdown = str_replace('&amp;', '&', $markdown);
         return trim((string)preg_replace("/\n{3,}/", "\n\n", $markdown));
