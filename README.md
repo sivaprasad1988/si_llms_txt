@@ -15,6 +15,24 @@ Every included page points to its `.md` (`rel="alternate" type="text/markdown"`)
 language (`rel="describedby"`), as `<link>` in the HTML head and as HTTP `Link` header, as recommended by
 [llmstxt.org](https://llmstxt.org/). `.md` responses get the `describedby` header.
 
+## llms.txt standard
+
+The output follows the proposal at [llmstxt.org](https://llmstxt.org/):
+
+| llmstxt.org | si_llms_txt |
+|-------------|-------------|
+| File at `/llms.txt` or a sub-path; it covers everything below its path | `/llms.txt` for the site, `/<lang>/llms.txt` per language |
+| H1 with the name of the site (the only required section) | `# <website title of the language>` |
+| Blockquote with a short summary | Written by you in the **llms.txt intro** of the language: start it with `> ` |
+| Sections without headings with more details | Also in the intro, below the blockquote (paragraphs, lists – no headings) |
+| H2 sections with file lists `- [name](url): notes` | One section per top-level page, plus articles and news; notes = LLM description or meta description; absolute URLs pointing to the `.md` versions |
+| `## Optional` for secondary information | Link to `llms-full.txt` |
+| Clean Markdown of a page at the same URL with `.md` appended; URLs without a file name use `index.md` | `/de/pricing` → `/de/pricing.md`, `/de/` → `/de/index.md` (`/de/pricing/index.md` works as well) |
+| `rel="alternate" type="text/markdown"` and `rel="describedby"`, as `<link>` or HTTP `Link` header | Both relations, both ways (see above) |
+
+`llms-full.txt` is not part of the proposal; it is a common convention that contains the Markdown of all listed
+pages in one file.
+
 ## Setup
 
 **Composer mode only.** The extension needs `league/html-to-markdown`, which Composer installs. Installations without Composer (classic mode) are not supported.
