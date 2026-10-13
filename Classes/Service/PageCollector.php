@@ -36,7 +36,7 @@ final class PageCollector
         $context->setAspect('language', $languageAspect);
         $pageRepository = GeneralUtility::makeInstance(PageRepository::class, $context);
 
-        $result = ['pages' => [], 'sections' => []];
+        $result = ['pages' => [], 'sections' => [], 'rootTitle' => ''];
         foreach ($this->fetchRows('uid', $site->getRootPageId()) as $root) {
             $this->visit($root, 0, 0, $site, $languageAspect, $pageRepository, $result);
         }
@@ -47,6 +47,9 @@ final class PageCollector
     {
         $page = $pageRepository->getPageOverlay($row, $languageAspect);
         $exists = $languageAspect->getId() === 0 || isset($page['_LOCALIZED_UID']);
+        if ($depth === 0 && $page !== []) {
+            $result['rootTitle'] = (string)($page['nav_title'] ?: $page['title']);
+        }
         if ($depth === 1) {
             $section = (int)$row['uid'];
             $result['sections'][$section] = (string)($page['nav_title'] ?: $page['title']);

@@ -73,7 +73,9 @@ Classes
         -   HTML → Markdown with league/html-to-markdown; removes navigation,
             breadcrumbs, asides, forms, buttons, scripts, decorative images
             and links without text; accordion titles and ``<summary>``
-            become h3 headings; makes links absolute
+            become h3 headings; keeps button titles in headings; resolves
+            lazy-loaded images; moves card links onto their heading; makes
+            links absolute
     *   -   ``Service\DiscoveryLinks``
         -   ``alternate`` and ``describedby`` links of a page, as HTML tags or
             HTTP ``Link`` header

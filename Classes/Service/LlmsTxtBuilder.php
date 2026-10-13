@@ -47,7 +47,7 @@ final class LlmsTxtBuilder
                 }
             }
 
-            $out = [$this->header($site, $language)];
+            $out = [$this->header($site, $language, $collected['rootTitle'] ?? '')];
             // Root page and top-level pages without subpages first, then one section per top-level page.
             $general = $pages[0] ?? [];
             foreach ($pages as $section => $entries) {
@@ -75,7 +75,7 @@ final class LlmsTxtBuilder
     public function full(Site $site, SiteLanguage $language): string
     {
         return $this->cached('full', $site, $language, function (array $collected) use ($site, $language): string {
-            $out = [$this->header($site, $language)];
+            $out = [$this->header($site, $language, $collected['rootTitle'] ?? '')];
             foreach ($collected['pages'] as $entry) {
                 $pageUri = $this->pageUri($site, $language, $entry['uid']);
                 $markdown = $this->fetchMarkdown($site, MarkdownUrl::fromPageUri($pageUri));
@@ -189,9 +189,10 @@ final class LlmsTxtBuilder
         return $content;
     }
 
-    private function header(Site $site, SiteLanguage $language): string
+    /** H1: website title of the language or the site, else the title of the root page, else the site identifier. */
+    private function header(Site $site, SiteLanguage $language, string $rootTitle): string
     {
-        $title = (string)($language->getWebsiteTitle() ?: ($site->getConfiguration()['websiteTitle'] ?? $site->getIdentifier()));
+        $title = $language->getWebsiteTitle() ?: (string)($site->getConfiguration()['websiteTitle'] ?? '') ?: $rootTitle ?: $site->getIdentifier();
         $intro = trim((string)($language->toArray()['sillmstxtIntro'] ?? ''));
         return '# ' . $title . ($intro !== '' ? "\n\n" . $intro : '');
     }

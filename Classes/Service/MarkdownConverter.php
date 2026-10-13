@@ -26,14 +26,61 @@ final class MarkdownConverter
     {
         $dom = new \DOMDocument();
         $dom->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_NONET);
-        $root = $dom->getElementById($elementId) ?? $dom->getElementsByTagName('body')->item(0);
+        // Content area: the element with the configured id, else <main>, else <body>
+        $root = $dom->getElementById($elementId)
+            ?? $dom->getElementsByTagName('main')->item(0)
+            ?? $dom->getElementsByTagName('body')->item(0);
         if ($root === null) {
             return '';
         }
 
         $xpath = new \DOMXPath($dom);
+        // Lazy-loaded images: the real URL is in data-src / data-srcset / srcset, src is a placeholder
+        foreach (iterator_to_array($xpath->query('.//img', $root)) as $image) {
+            $src = $image->getAttribute('src');
+            if ($src === '' || str_starts_with($src, 'data:')) {
+                $real = $image->getAttribute('data-src') ?: $image->getAttribute('data-lazy-src')
+                    ?: strtok($image->getAttribute('data-srcset') ?: $image->getAttribute('srcset') ?: '', ' ,') ?: '';
+                if ($real === '' || str_starts_with($real, 'data:')) {
+                    $image->parentNode?->removeChild($image);
+                } else {
+                    $image->setAttribute('src', $real);
+                }
+            }
+        }
+        // Accordion triggers <hN><button>Title</button></hN>: keep the title, the button is removed as noise
+        foreach (iterator_to_array($xpath->query('.//h1//button|.//h2//button|.//h3//button|.//h4//button|.//h5//button|.//h6//button', $root)) as $button) {
+            $button->parentNode?->replaceChild($dom->createTextNode(trim($button->textContent)), $button);
+        }
         foreach (iterator_to_array($xpath->query(self::NOISE_XPATH, $root)) as $node) {
             $node->parentNode?->removeChild($node);
+        }
+        // Headings without text (e.g. only an image) would become an empty "###"
+        foreach (iterator_to_array($xpath->query('.//h1|.//h2|.//h3|.//h4|.//h5|.//h6', $root)) as $heading) {
+            if (trim($heading->textContent) === '') {
+                while ($heading->firstChild !== null) {
+                    $heading->parentNode?->insertBefore($heading->firstChild, $heading);
+                }
+                $heading->parentNode?->removeChild($heading);
+            }
+        }
+        // Block links (a card <a> around a heading and text) would become a broken multi-line "[…](…)":
+        // the link goes onto the heading (or the first paragraph), the rest stays as plain content.
+        foreach (iterator_to_array($xpath->query('.//a[@href][.//h1 or .//h2 or .//h3 or .//h4 or .//h5 or .//h6 or .//p or .//div or .//figure]', $root)) as $link) {
+            $target = $xpath->query('.//h1|.//h2|.//h3|.//h4|.//h5|.//h6', $link)->item(0) ?? $xpath->query('.//p', $link)->item(0);
+            if ($target instanceof \DOMElement && trim($target->textContent) !== '') {
+                $inner = $dom->createElement('a');
+                $inner->setAttribute('href', $link->getAttribute('href'));
+                $inner->appendChild($dom->createTextNode(trim($target->textContent)));
+                while ($target->firstChild !== null) {
+                    $target->removeChild($target->firstChild);
+                }
+                $target->appendChild($inner);
+            }
+            while ($link->firstChild !== null) {
+                $link->parentNode?->insertBefore($link->firstChild, $link);
+            }
+            $link->parentNode?->removeChild($link);
         }
         foreach (iterator_to_array($xpath->query(self::INLINE_NEXT_TO_BLOCK_XPATH . '|.//figure', $root)) as $span) {
             $paragraph = $dom->createElement($span->nodeName === 'figure' ? 'div' : 'p');
@@ -42,11 +89,11 @@ final class MarkdownConverter
             }
             $span->parentNode?->replaceChild($paragraph, $span);
         }
-        // Links without href are script widgets (accordion titles, tabs); they would stay as raw HTML.
+        // Links without (or with an empty) href are script widgets (accordion titles, tabs); they would stay as raw HTML.
         // An accordion title (role="button") becomes an h3 above its answer and its list is unwrapped
         // (an answer paragraph inside a list item loses its indentation); anything else becomes plain text.
         $accordionLists = [];
-        foreach (iterator_to_array($xpath->query('.//a[not(@href)]', $root)) as $link) {
+        foreach (iterator_to_array($xpath->query('.//a[not(@href) or normalize-space(@href)=""]', $root)) as $link) {
             if ($link->getAttribute('role') === 'button') {
                 $replacement = $dom->createElement('h3');
                 $replacement->appendChild($dom->createTextNode(trim($link->textContent)));

@@ -60,10 +60,12 @@ Pages with "no index" (EXT:seo) are left out as well.
 ## How the Markdown is made
 
 Without "LLM Markdown", the page is rendered normally and the element with the id from
-`sillmstxt.contentElementId` (default `wrapper`, i.e. `<main id="wrapper">`) is converted with
+`sillmstxt.contentElementId` (default `wrapper`, i.e. `<main id="wrapper">`; if missing: `<main>`, then `<body>`) is converted with
 league/html-to-markdown. Navigation, breadcrumbs, asides, forms, buttons, scripts and decorative images are removed.
 Accordion titles (`<a role="button">` without `href`) and `<details><summary>` become `###` headings above their
-answer, links without text (icon links) are removed, so no raw HTML remains in the Markdown.
+answer, links without text (icon links) are removed, so no raw HTML remains in the Markdown. Accordion triggers
+(`<h3><button>…</button></h3>`) keep their title, lazy-loaded images use `data-src`/`srcset`, and card links around a
+heading put the link on the heading.
 To leave out anything else (share bars, teasers), add the attribute `data-sillmstxt-ignore` to the element in your
 template, e.g. `<div class="share" data-sillmstxt-ignore>`.
 

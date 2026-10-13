@@ -36,7 +36,8 @@ The settings come with the site set and are edited in
 
     ``id`` of the HTML element whose content becomes the generated Markdown
     of a page. Everything outside of it (header, footer, menus, modals) is
-    ignored. If the element is missing, ``<body>`` is used.
+    ignored. If the element is missing, the first ``<main>`` element is used,
+    and without ``<main>`` the ``<body>``.
 
     Inside the element, anything with the attribute
     ``data-sillmstxt-ignore`` is left out as well, for example a share bar:

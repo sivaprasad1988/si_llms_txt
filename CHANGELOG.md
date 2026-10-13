@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.7 (2026-10-13)
+
+Tested on a second TYPO3 14.3 site with a different theme; these fixes make the Markdown work for other templates:
+
+- Content area: without an element with the configured `contentElementId`, the first `<main>` is used before `<body>`
+  (header, footer and cookie banners outside `<main>` no longer end up in the Markdown).
+- Accordion triggers inside headings (`<h3><button>Title</button></h3>`) keep their title; headings without text are removed.
+- Lazy-loaded images use `data-src` / `data-lazy-src` / `srcset` instead of a `data:` placeholder, or are dropped.
+- Card links around a heading and text become a link on the heading instead of a broken multi-line link.
+- Links with an empty `href` are treated like links without `href`.
+- llms.txt H1 falls back to the root page title when the site has no website title (was an empty `# `).
+
 ## 1.0.6 (2026-10-13)
 
 - Elements with the attribute `data-sillmstxt-ignore` are left out of the generated Markdown
