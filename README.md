@@ -64,6 +64,8 @@ Without "LLM Markdown", the page is rendered normally and the element with the i
 league/html-to-markdown. Navigation, breadcrumbs, asides, forms, buttons, scripts and decorative images are removed.
 Accordion titles (`<a role="button">` without `href`) and `<details><summary>` become `###` headings above their
 answer, links without text (icon links) are removed, so no raw HTML remains in the Markdown.
+To leave out anything else (share bars, teasers), add the attribute `data-sillmstxt-ignore` to the element in your
+template, e.g. `<div class="share" data-sillmstxt-ignore>`.
 
 `llms-full.txt` fetches each page's `.md` from the server itself (`sillmstxt.loopbackUrl`, default
 `http://127.0.0.1`, with the Host and X-Forwarded-Proto of the site base). It needs TYPO3 to trust

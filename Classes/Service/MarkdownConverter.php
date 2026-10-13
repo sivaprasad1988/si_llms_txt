@@ -13,8 +13,9 @@ use Psr\Http\Message\UriInterface;
  */
 final class MarkdownConverter
 {
-    /** Elements that carry no readable content for an LLM. */
+    /** Elements that carry no readable content for an LLM; templates can mark more with data-sillmstxt-ignore. */
     private const NOISE_XPATH = './/script|.//style|.//noscript|.//template|.//svg|.//iframe|.//nav|.//aside|.//form|.//button|.//dialog|.//*[@hidden]|.//*[@aria-hidden="true"]'
+        . '|.//*[@data-sillmstxt-ignore]'
         . '|.//*[contains(@class, "breadcrumb")]'
         // Decorative images: empty alt, alt "icon" or SVG icons.
         . '|.//img[@alt="" or translate(@alt, "ICON", "icon")="icon" or contains(@src, ".svg")]';
