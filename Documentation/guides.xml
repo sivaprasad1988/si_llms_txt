@@ -19,6 +19,6 @@
         project-home="https://github.com/sivaprasad1988/si_llms_txt"
         project-issues="https://github.com/sivaprasad1988/si_llms_txt/issues"
         project-repository="https://github.com/sivaprasad1988/si_llms_txt"
-        typo3-core-preferred="14.3"
+        typo3-core-preferred="13.4"
     />
 </guides>

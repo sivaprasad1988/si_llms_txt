@@ -46,6 +46,10 @@ final class PageCollector
     private function visit(array $row, int $depth, int $section, Site $site, LanguageAspect $languageAspect, PageRepository $pageRepository, array &$result): void
     {
         $page = $pageRepository->getPageOverlay($row, $languageAspect);
+        // TYPO3 12 marks a page translation with _PAGES_OVERLAY_UID instead of _LOCALIZED_UID
+        if (isset($page['_PAGES_OVERLAY_UID']) && !isset($page['_LOCALIZED_UID'])) {
+            $page['_LOCALIZED_UID'] = (int)$page['_PAGES_OVERLAY_UID'];
+        }
         $exists = $languageAspect->getId() === 0 || isset($page['_LOCALIZED_UID']);
         if ($depth === 0 && $page !== []) {
             $result['rootTitle'] = (string)($page['nav_title'] ?: $page['title']);

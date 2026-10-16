@@ -12,6 +12,11 @@ services:
     factory: ['@TYPO3\CMS\Core\Cache\CacheManager', 'getCache']
     arguments: ['sillmstxt']
 
+  Woit\SiLlmsTxt\EventListener\AddMarkdownAlternateLink:
+    tags:
+      - name: event.listener
+        identifier: 'woit/si-llms-txt/markdown-alternate-link'
+
   Woit\SiLlmsTxt\Service\LlmsTxtBuilder:
     arguments:
       $cache: '@cache.sillmstxt'

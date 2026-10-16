@@ -46,6 +46,16 @@ pages in one file.
 3. Sites module → language → tab "LLM" → **llms.txt intro** (Markdown below the site title)
 4. Do not put a static `public/llms.txt` in place – the web server would serve it instead
 
+## TYPO3 12.4 and 13.4
+
+This release line (0.9.x, branch `typo3-12-13`) supports TYPO3 12.4 and 13.4; for TYPO3 14.3 use 1.x (branch `main`).
+Tested with 12.4.45, 13.4.36 and EXT:news. Everything works the same as in 1.x; only the setup differs:
+
+- **TYPO3 13.4:** same as 14 – Site Set via *Sets for this Site*, settings in *Site Management → Settings* or `settings.yaml`.
+- **TYPO3 12.4:** no Site Sets. Add `woit/si-llms-txt` by hand to `dependencies` in `config/sites/<identifier>/config.yaml`
+  (the backend keeps it when the site is saved) and put `sillmstxt.*` settings into the site's `settings.yaml`
+  (not validated on 12; defaults apply without it).
+
 ## Page properties (tab "LLM", standard pages and articles)
 
 | Field | Effect |

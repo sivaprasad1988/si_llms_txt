@@ -8,6 +8,7 @@ use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Http\RequestFactory;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 
@@ -32,6 +33,7 @@ final class LlmsTxtBuilder
         private readonly MarkdownConverter $markdownConverter,
         private readonly RequestFactory $requestFactory,
         private readonly LoggerInterface $logger,
+        private readonly LanguageServiceFactory $languageServiceFactory,
     ) {}
 
     public function index(Site $site, SiteLanguage $language): string
@@ -57,16 +59,16 @@ final class LlmsTxtBuilder
                 }
             }
             unset($pages[0]);
-            $out[] = $this->section($this->isGerman($language) ? 'Seiten' : 'Pages', $general, $site, $language);
+            $out[] = $this->section($this->label('pages', $language), $general, $site, $language);
             foreach ($pages as $section => $entries) {
-                $out[] = $this->section($collected['sections'][$section] ?? 'Pages', $entries, $site, $language);
+                $out[] = $this->section($collected['sections'][$section] ?? $this->label('pages', $language), $entries, $site, $language);
             }
             usort($articles, static fn(array $a, array $b): int => [(int)$b['page']['lastUpdated'], (int)$b['page']['crdate']] <=> [(int)$a['page']['lastUpdated'], (int)$a['page']['crdate']]);
-            $out[] = $this->section($this->isGerman($language) ? 'Artikel' : 'Articles', $articles, $site, $language);
+            $out[] = $this->section($this->label('articles', $language), $articles, $site, $language);
             $out[] = $this->newsSection($collected['news'], $site, $language);
             $out[] = $this->languagesSection($site, $language);
-            $out[] = "## Optional\n\n- [" . self::FULL_FILE . '](' . $this->fileUri($language, self::FULL_FILE) . '): '
-                . ($this->isGerman($language) ? 'Vollständiger Inhalt aller Seiten als Markdown' : 'Full content of all pages as Markdown');
+            $out[] = '## ' . $this->label('optional', $language) . "\n\n- [" . self::FULL_FILE . '](' . $this->fileUri($language, self::FULL_FILE) . '): '
+                . $this->label('optional.fullFile', $language);
 
             return implode("\n\n", array_filter($out)) . "\n";
         });
@@ -219,7 +221,7 @@ final class LlmsTxtBuilder
         if ($entries === []) {
             return '';
         }
-        $lines = ['## News', ''];
+        $lines = ['## ' . $this->label('news', $language), ''];
         foreach ($entries as $entry) {
             $description = $this->newsDescription($entry['news']);
             $date = (int)($entry['news']['datetime'] ?? 0) > 0 ? ' (' . date('Y-m-d', (int)$entry['news']['datetime']) . ')' : '';
@@ -242,12 +244,14 @@ final class LlmsTxtBuilder
                 $lines[] = '- [' . $language->getTitle() . '](' . $this->fileUri($language, self::INDEX_FILE) . ')';
             }
         }
-        return $lines === [] ? '' : "## Languages\n\n" . implode("\n", $lines);
+        return $lines === [] ? '' : '## ' . $this->label('languages', $current) . "\n\n" . implode("\n", $lines);
     }
 
-    private function isGerman(SiteLanguage $language): bool
+    /** Heading/label from locallang.xlf in the language of the generated file. */
+    private function label(string $key, SiteLanguage $language): string
     {
-        return $language->getLocale()->getLanguageCode() === 'de';
+        return $this->languageServiceFactory->createFromSiteLanguage($language)
+            ->sL('LLL:EXT:si_llms_txt/Resources/Private/Language/locallang.xlf:llmstxt.' . $key);
     }
 
     private function description(array $page): string

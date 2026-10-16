@@ -10,8 +10,8 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
-use TYPO3\CMS\Frontend\Page\PageInformation;
 use Woit\SiLlmsTxt\Service\DiscoveryLinks;
+use Woit\SiLlmsTxt\Service\FrontendPage;
 use Woit\SiLlmsTxt\Service\LlmsTxtBuilder;
 use Woit\SiLlmsTxt\Service\MarkdownConverter;
 use Woit\SiLlmsTxt\Service\NewsCollector;
@@ -35,20 +35,20 @@ final class MarkdownRenderMiddleware implements MiddlewareInterface
     {
         $site = $request->getAttribute('site');
         $language = $request->getAttribute('language');
-        $pageInformation = $request->getAttribute('frontend.page.information');
+        $resolvedPage = FrontendPage::fromRequest($request);
         if (!$request->getAttribute(MarkdownSuffixMiddleware::MARKDOWN)) {
             return $this->withLinkHeader($request, $handler->handle($request), true);
         }
         if (!SiteConfig::isEnabled($site)
             || !$language instanceof SiteLanguage
-            || !$pageInformation instanceof PageInformation
+            || $resolvedPage === null
         ) {
             return $handler->handle($request);
         }
 
-        $page = $pageInformation->getPageRecord();
+        $page = $resolvedPage['record'];
         $detailPid = SiteConfig::newsDetailPid($site);
-        if ($detailPid > 0 && $pageInformation->getId() === $detailPid) {
+        if ($detailPid > 0 && $resolvedPage['id'] === $detailPid) {
             return $this->newsMarkdown($request, $handler);
         }
         if (!SiteConfig::isPageIncluded($page, $site)) {

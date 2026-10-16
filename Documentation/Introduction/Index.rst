@@ -50,7 +50,7 @@ Features
 Requirements
 ============
 
-*   TYPO3 14.3
+*   TYPO3 13.4 or 12.4 (see :ref:`older-versions`); for TYPO3 14.3 use version 1.x
 *   PHP 8.2 or higher
 *   `league/html-to-markdown <https://github.com/thephpleague/html-to-markdown>`__
     (installed by Composer)

@@ -49,6 +49,10 @@ can read the website without navigation, scripts and layout.
 
         Install the package, add the site set, remove a static llms.txt.
 
+    ..  card:: :ref:`TYPO3 12.4 and 13.4 <older-versions>`
+
+        Setup differences on TYPO3 12 and 13 (no site sets on 12).
+
     ..  card:: :ref:`Configuration <configuration>`
 
         Site settings and the llms.txt intro per language.
@@ -80,6 +84,7 @@ can read the website without navigation, scripts and layout.
 
     Introduction/Index
     Installation/Index
+    OlderVersions/Index
     Configuration/Index
     Editor/Index
     Endpoints/Index

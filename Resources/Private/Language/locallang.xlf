@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+	<file source-language="en" datatype="plaintext" original="EXT:si_llms_txt/Resources/Private/Language/locallang.xlf">
+		<body>
+			<trans-unit id="llmstxt.pages">
+				<source>Pages</source>
+			</trans-unit>
+			<trans-unit id="llmstxt.articles">
+				<source>Articles</source>
+			</trans-unit>
+			<trans-unit id="llmstxt.news">
+				<source>News</source>
+			</trans-unit>
+			<trans-unit id="llmstxt.languages">
+				<source>Languages</source>
+			</trans-unit>
+			<trans-unit id="llmstxt.optional">
+				<source>Optional</source>
+			</trans-unit>
+			<trans-unit id="llmstxt.optional.fullFile">
+				<source>Full content of all pages as Markdown</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

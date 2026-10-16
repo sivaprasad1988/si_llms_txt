@@ -6,7 +6,6 @@ namespace Woit\SiLlmsTxt\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
-use TYPO3\CMS\Frontend\Page\PageInformation;
 
 /**
  * Link relations recommended by llmstxt.org for a resolved page: rel="alternate" type="text/markdown"
@@ -23,19 +22,19 @@ final class DiscoveryLinks
     {
         $site = $request->getAttribute('site');
         $language = $request->getAttribute('language');
-        $pageInformation = $request->getAttribute('frontend.page.information');
-        if (!SiteConfig::isEnabled($site) || !$language instanceof SiteLanguage || !$pageInformation instanceof PageInformation) {
+        $resolvedPage = FrontendPage::fromRequest($request);
+        if (!SiteConfig::isEnabled($site) || !$language instanceof SiteLanguage || $resolvedPage === null) {
             return null;
         }
         $detailPid = SiteConfig::newsDetailPid($site);
-        if ($detailPid > 0 && $pageInformation->getId() === $detailPid) {
+        if ($detailPid > 0 && $resolvedPage['id'] === $detailPid) {
             $newsUid = NewsCollector::uidFromRequest($request);
             if ($newsUid === 0) {
                 return null;
             }
             $markdown = MarkdownUrl::fromPageUri($this->builder->newsUri($site, $language, $newsUid));
-        } elseif (SiteConfig::isPageIncluded($pageInformation->getPageRecord(), $site)) {
-            $markdown = MarkdownUrl::fromPageUri($this->builder->pageUri($site, $language, $pageInformation->getId()));
+        } elseif (SiteConfig::isPageIncluded($resolvedPage['record'], $site)) {
+            $markdown = MarkdownUrl::fromPageUri($this->builder->pageUri($site, $language, $resolvedPage['id']));
         } else {
             return null;
         }

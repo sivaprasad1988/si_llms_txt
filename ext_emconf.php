@@ -12,10 +12,10 @@ $EM_CONF[$_EXTKEY] = [
     'author' => 'Siva',
     'author_email' => 'siva@webofficeit.com',
     'author_company' => '',
-    'version' => '1.0.7',
+    'version' => '0.9.0',
     'constraints' => [
         'depends' => [
-            'typo3' => '14.3.0-14.99.99',
+            'typo3' => '12.4.0-13.4.99',
             'php' => '8.2.0-8.5.99',
         ],
         'conflicts' => [],

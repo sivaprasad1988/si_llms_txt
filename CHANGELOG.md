@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.0 (2026-10-16)
+
+Release line for TYPO3 12.4 and 13.4 (branch `typo3-12-13`); TYPO3 14.3 stays on 1.x (branch `main`).
+Based on 1.0.7, tested on fresh installations of 12.4.45 and 13.4.36 (EXT:news, two languages):
+  - Resolved page read from `frontend.page.information` (13+) or the TypoScriptFrontendController (12).
+  - `<link>` tags: page content from the event (14) or the TypoScriptFrontendController (12/13).
+  - Event listener registered in `Services.yaml` instead of `#[AsEventListener]` (attribute needs 13+).
+  - Page translations detected via `_PAGES_OVERLAY_UID` on TYPO3 12 (translated pages were missing from llms.txt).
+  - llms.txt headings from `Resources/Private/Language/locallang.xlf` in the language of the file (was hardcoded German/English; "Languages" was never translated). Further languages: add an XLF file or use `locallangXMLOverride`.
+  - TYPO3 12 has no Site Sets: add `woit/si-llms-txt` to the site's `dependencies` by hand.
+
 ## 1.0.7 (2026-10-13)
 
 Tested on a second TYPO3 14.3 site with a different theme; these fixes make the Markdown work for other templates:
