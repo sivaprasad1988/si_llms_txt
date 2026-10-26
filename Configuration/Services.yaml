@@ -6,6 +6,7 @@ services:
 
   Woit\SiLlmsTxt\:
     resource: '../Classes/*'
+    exclude: '../Classes/{Event,LlmsTxt}/*'
 
   cache.sillmstxt:
     class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface

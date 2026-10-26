@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Woit\SiLlmsTxt\Middleware;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -11,6 +12,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use TYPO3\CMS\Frontend\Page\PageInformation;
+use Woit\SiLlmsTxt\Event\ModifyMarkdownEvent;
 use Woit\SiLlmsTxt\Service\DiscoveryLinks;
 use Woit\SiLlmsTxt\Service\LlmsTxtBuilder;
 use Woit\SiLlmsTxt\Service\MarkdownConverter;
@@ -29,6 +31,7 @@ final class MarkdownRenderMiddleware implements MiddlewareInterface
         private readonly MarkdownConverter $converter,
         private readonly NewsCollector $newsCollector,
         private readonly DiscoveryLinks $discoveryLinks,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -58,15 +61,16 @@ final class MarkdownRenderMiddleware implements MiddlewareInterface
 
         $editorMarkdown = trim((string)($page['tx_sillmstxt_markdown'] ?? ''));
         if ($editorMarkdown !== '') {
-            return $this->withLinkHeader($request, $this->markdownResponse($this->builder->pageDocument($page, $site, $language, $editorMarkdown, 'editor')), false);
+            return $this->document($request, 'pages', $page, $this->builder->pageFrontmatter($page, $site, $language, 'editor'), $editorMarkdown, null);
         }
 
         $response = $handler->handle($request);
         if ($response->getStatusCode() !== 200 || !str_contains($response->getHeaderLine('Content-Type'), 'text/html')) {
             return $response;
         }
-        $body = $this->converter->fromHtml((string)$response->getBody(), SiteConfig::contentElementId($site), $site->getBase());
-        return $this->withLinkHeader($request, $this->markdownResponse($this->builder->pageDocument($page, $site, $language, $body, 'generated')), false);
+        $html = (string)$response->getBody();
+        $body = $this->converter->fromHtml($html, SiteConfig::contentElementId($site), $site->getBase());
+        return $this->document($request, 'pages', $page, $this->builder->pageFrontmatter($page, $site, $language, 'generated'), $body, $html);
     }
 
     /** EXT:news detail page: Markdown of the requested news record, 404 without (or with an invisible) record. */
@@ -83,8 +87,20 @@ final class MarkdownRenderMiddleware implements MiddlewareInterface
         if ($response->getStatusCode() !== 200 || !str_contains($response->getHeaderLine('Content-Type'), 'text/html')) {
             return $response;
         }
-        $body = $this->converter->fromHtml((string)$response->getBody(), SiteConfig::contentElementId($site), $site->getBase());
-        return $this->withLinkHeader($request, $this->markdownResponse($this->builder->newsDocument($news, $site, $language, $body)), false);
+        $html = (string)$response->getBody();
+        $body = $this->converter->fromHtml($html, SiteConfig::contentElementId($site), $site->getBase());
+        return $this->document($request, 'tx_news_domain_model_news', $news, $this->builder->newsFrontmatter($news, $site, $language), $body, $html);
+    }
+
+    /** Lets listeners of ModifyMarkdownEvent change the document; setNotFound() becomes a 404. */
+    private function document(ServerRequestInterface $request, string $table, array $record, array $frontmatter, string $body, ?string $html): ResponseInterface
+    {
+        $event = $this->eventDispatcher->dispatch(new ModifyMarkdownEvent($request, $table, $record, $frontmatter, $body, $html));
+        if ($event->isNotFound()) {
+            // No RESPONSE_HEADER: MarkdownSuffixMiddleware turns this into a 404.
+            return new Response();
+        }
+        return $this->withLinkHeader($request, $this->markdownResponse($this->converter->document($event->getFrontmatter(), $event->getMarkdown())), false);
     }
 
     /** HTML page: alternate + describedby; Markdown response: describedby only. */

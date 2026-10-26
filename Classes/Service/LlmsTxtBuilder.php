@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Woit\SiLlmsTxt\Service;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Http\RequestFactory;
+use TYPO3\CMS\Core\Http\Uri;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
+use Woit\SiLlmsTxt\Event\ModifyLlmsTxtEvent;
+use Woit\SiLlmsTxt\LlmsTxt\Item;
+use Woit\SiLlmsTxt\LlmsTxt\Section;
 
 /**
  * Builds llms.txt (index) and llms-full.txt (all pages as Markdown) for one site language,
@@ -29,41 +34,18 @@ final class LlmsTxtBuilder
         private readonly FrontendInterface $cache,
         private readonly PageCollector $pageCollector,
         private readonly NewsCollector $newsCollector,
-        private readonly MarkdownConverter $markdownConverter,
         private readonly RequestFactory $requestFactory,
         private readonly LoggerInterface $logger,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function index(Site $site, SiteLanguage $language): string
     {
-        return $this->cached('index', $site, $language, function (array $collected) use ($site, $language): string {
-            $pages = $articles = [];
-            $articleDoktypes = SiteConfig::articleDoktypes($site);
-            foreach ($collected['pages'] as $entry) {
-                if (in_array((int)$entry['page']['doktype'], $articleDoktypes, true)) {
-                    $articles[] = $entry;
-                } else {
-                    $pages[$entry['section']][] = $entry;
-                }
+        return $this->cached('index', self::INDEX_FILE, $site, $language, function (ModifyLlmsTxtEvent $event) use ($site, $language): string {
+            $out = [$this->header($event)];
+            foreach ($event->getSections() as $section) {
+                $out[] = $this->section($section);
             }
-
-            $out = [$this->header($site, $language, $collected['rootTitle'] ?? '')];
-            // Root page and top-level pages without subpages first, then one section per top-level page.
-            $general = $pages[0] ?? [];
-            foreach ($pages as $section => $entries) {
-                if ($section !== 0 && count($entries) === 1 && $entries[0]['uid'] === $section) {
-                    $general[] = $entries[0];
-                    unset($pages[$section]);
-                }
-            }
-            unset($pages[0]);
-            $out[] = $this->section($this->isGerman($language) ? 'Seiten' : 'Pages', $general, $site, $language);
-            foreach ($pages as $section => $entries) {
-                $out[] = $this->section($collected['sections'][$section] ?? 'Pages', $entries, $site, $language);
-            }
-            usort($articles, static fn(array $a, array $b): int => [(int)$b['page']['lastUpdated'], (int)$b['page']['crdate']] <=> [(int)$a['page']['lastUpdated'], (int)$a['page']['crdate']]);
-            $out[] = $this->section($this->isGerman($language) ? 'Artikel' : 'Articles', $articles, $site, $language);
-            $out[] = $this->newsSection($collected['news'], $site, $language);
             $out[] = $this->languagesSection($site, $language);
             $out[] = "## Optional\n\n- [" . self::FULL_FILE . '](' . $this->fileUri($language, self::FULL_FILE) . '): '
                 . ($this->isGerman($language) ? 'Vollständiger Inhalt aller Seiten als Markdown' : 'Full content of all pages as Markdown');
@@ -74,36 +56,36 @@ final class LlmsTxtBuilder
 
     public function full(Site $site, SiteLanguage $language): string
     {
-        return $this->cached('full', $site, $language, function (array $collected) use ($site, $language): string {
-            $out = [$this->header($site, $language, $collected['rootTitle'] ?? '')];
-            foreach ($collected['pages'] as $entry) {
-                $pageUri = $this->pageUri($site, $language, $entry['uid']);
-                $markdown = $this->fetchMarkdown($site, MarkdownUrl::fromPageUri($pageUri));
-                if ($markdown === null) {
-                    $this->incomplete = true;
-                } else {
-                    $out[] = "---\n\nSource: " . $pageUri . "\n\n" . MarkdownConverter::stripFrontmatter($markdown);
-                }
-            }
-            foreach ($collected['news'] as $entry) {
-                $newsUri = $this->newsUri($site, $language, $entry['uid']);
-                $markdown = $this->fetchMarkdown($site, MarkdownUrl::fromPageUri($newsUri));
-                if ($markdown === null) {
-                    $this->incomplete = true;
-                } else {
-                    $out[] = "---\n\nSource: " . $newsUri . "\n\n" . MarkdownConverter::stripFrontmatter($markdown);
+        return $this->cached('full', self::FULL_FILE, $site, $language, function (ModifyLlmsTxtEvent $event) use ($site): string {
+            $out = [$this->header($event)];
+            foreach ($event->getSections() as $section) {
+                foreach ($section->items as $item) {
+                    if ($item->markdown === null && !$item->includeInFull) {
+                        continue;
+                    }
+                    $uri = new Uri($item->url);
+                    $markdown = $item->markdown ?? $this->fetchMarkdown($site, $uri);
+                    if ($markdown === null) {
+                        $this->incomplete = true;
+                        continue;
+                    }
+                    $source = MarkdownUrl::isMarkdownPath($uri->getPath()) ? (string)$uri->withPath(MarkdownUrl::toPagePath($uri->getPath())) : $item->url;
+                    $out[] = "---\n\nSource: " . $source . "\n\n" . MarkdownConverter::stripFrontmatter($markdown);
                 }
             }
             return implode("\n\n", $out) . "\n";
         });
     }
 
-    /** Markdown document of one page; $body is the editor Markdown or the converted page content. */
-    public function pageDocument(array $page, Site $site, SiteLanguage $language, string $body, string $source): string
+    /**
+     * Frontmatter of the Markdown document of one page; $source is "editor" or "generated".
+     * @return array<string, string|null>
+     */
+    public function pageFrontmatter(array $page, Site $site, SiteLanguage $language, string $source): array
     {
         $pageUri = $this->pageUri($site, $language, (int)($page['l10n_parent'] ?: $page['uid']));
         $lastChanged = max((int)($page['SYS_LASTCHANGED'] ?? 0), (int)($page['tstamp'] ?? 0));
-        return $this->markdownConverter->document([
+        return [
             'title' => (string)$page['title'],
             'description' => $this->description($page),
             'language' => $language->getLocale()->getLanguageCode(),
@@ -111,14 +93,17 @@ final class LlmsTxtBuilder
             'canonical' => (string)$pageUri,
             'source' => $source,
             'generator' => self::GENERATOR,
-        ], $body);
+        ];
     }
 
-    /** Markdown document of one EXT:news record shown on the detail page. */
-    public function newsDocument(array $news, Site $site, SiteLanguage $language, string $body): string
+    /**
+     * Frontmatter of the Markdown document of one EXT:news record shown on the detail page.
+     * @return array<string, string|null>
+     */
+    public function newsFrontmatter(array $news, Site $site, SiteLanguage $language): array
     {
         $lastChanged = max((int)($news['tstamp'] ?? 0), (int)($news['datetime'] ?? 0));
-        return $this->markdownConverter->document([
+        return [
             'title' => (string)$news['title'],
             'description' => $this->newsDescription($news),
             'language' => $language->getLocale()->getLanguageCode(),
@@ -127,7 +112,7 @@ final class LlmsTxtBuilder
             'canonical' => (string)$this->newsUri($site, $language, (int)($news['l10n_parent'] ?: $news['uid'])),
             'source' => 'generated',
             'generator' => self::GENERATOR,
-        ], $body);
+        ];
     }
 
     /** Detail URL of a news record (default-language uid), built by the site router (route enhancer if configured). */
@@ -149,8 +134,8 @@ final class LlmsTxtBuilder
         return rtrim((string)$language->getBase(), '/') . '/' . $file;
     }
 
-    /** @param \Closure(array): string $build */
-    private function cached(string $kind, Site $site, SiteLanguage $language, \Closure $build): string
+    /** @param \Closure(ModifyLlmsTxtEvent): string $build */
+    private function cached(string $kind, string $fileName, Site $site, SiteLanguage $language, \Closure $build): string
     {
         $intro = (string)($language->toArray()['sillmstxtIntro'] ?? '');
         $identifier = $kind . '_' . md5($site->getIdentifier() . '|' . $language->getLanguageId() . '|' . $language->getBase() . '|' . $intro);
@@ -177,7 +162,15 @@ final class LlmsTxtBuilder
                 $tags[] = 'tx_news_uid_' . $entry['uid'];
             }
         }
-        $content = $build($collected);
+        $event = $this->eventDispatcher->dispatch(new ModifyLlmsTxtEvent(
+            $site,
+            $language,
+            $fileName,
+            $this->title($site, $language, $collected['rootTitle'] ?? ''),
+            trim($intro),
+            $this->sections($collected, $site, $language),
+        ));
+        $content = $build($event);
         foreach ($collected['pages'] as $entry) {
             $tags[] = 'pageId_' . $entry['uid'];
             if (isset($entry['page']['_LOCALIZED_UID'])) {
@@ -185,46 +178,102 @@ final class LlmsTxtBuilder
             }
         }
         $tags[] = 'pageId_' . $site->getRootPageId();
-        $this->cache->set($identifier, $content, array_values(array_unique($tags)), $this->incomplete ? self::INCOMPLETE_LIFETIME : 0);
+        $lifetime = $event->getCacheLifetime();
+        if ($this->incomplete) {
+            $lifetime = $lifetime > 0 ? min($lifetime, self::INCOMPLETE_LIFETIME) : self::INCOMPLETE_LIFETIME;
+        }
+        $this->cache->set($identifier, $content, array_values(array_unique([...$tags, ...$event->getCacheTags()])), $lifetime);
         return $content;
     }
 
     /** H1: website title of the language or the site, else the title of the root page, else the site identifier. */
-    private function header(Site $site, SiteLanguage $language, string $rootTitle): string
+    private function title(Site $site, SiteLanguage $language, string $rootTitle): string
     {
-        $title = $language->getWebsiteTitle() ?: (string)($site->getConfiguration()['websiteTitle'] ?? '') ?: $rootTitle ?: $site->getIdentifier();
-        $intro = trim((string)($language->toArray()['sillmstxtIntro'] ?? ''));
-        return '# ' . $title . ($intro !== '' ? "\n\n" . $intro : '');
+        return $language->getWebsiteTitle() ?: (string)($site->getConfiguration()['websiteTitle'] ?? '') ?: $rootTitle ?: $site->getIdentifier();
     }
 
-    /** @param list<array{uid: int, section: int, page: array<string, mixed>}> $entries */
-    private function section(string $title, array $entries, Site $site, SiteLanguage $language): string
+    private function header(ModifyLlmsTxtEvent $event): string
     {
-        if ($entries === []) {
+        $intro = trim($event->getIntro());
+        return '# ' . $event->getTitle() . ($intro !== '' ? "\n\n" . $intro : '');
+    }
+
+    /**
+     * Sections of the collected pages and news: root page and top-level pages without subpages first,
+     * then one section per top-level page, articles (newest first), news.
+     * @return array<string, Section>
+     */
+    private function sections(array $collected, Site $site, SiteLanguage $language): array
+    {
+        $pages = $articles = [];
+        $articleDoktypes = SiteConfig::articleDoktypes($site);
+        foreach ($collected['pages'] as $entry) {
+            if (in_array((int)$entry['page']['doktype'], $articleDoktypes, true)) {
+                $articles[] = $entry;
+            } else {
+                $pages[$entry['section']][] = $entry;
+            }
+        }
+        $general = $pages[0] ?? [];
+        foreach ($pages as $section => $entries) {
+            if ($section !== 0 && count($entries) === 1 && $entries[0]['uid'] === $section) {
+                $general[] = $entries[0];
+                unset($pages[$section]);
+            }
+        }
+        unset($pages[0]);
+
+        $sections = ['pages' => new Section($this->isGerman($language) ? 'Seiten' : 'Pages', $this->pageItems($general, $site, $language))];
+        foreach ($pages as $section => $entries) {
+            $sections['section-' . $section] = new Section($collected['sections'][$section] ?? 'Pages', $this->pageItems($entries, $site, $language));
+        }
+        usort($articles, static fn(array $a, array $b): int => [(int)$b['page']['lastUpdated'], (int)$b['page']['crdate']] <=> [(int)$a['page']['lastUpdated'], (int)$a['page']['crdate']]);
+        $sections['articles'] = new Section($this->isGerman($language) ? 'Artikel' : 'Articles', $this->pageItems($articles, $site, $language));
+        $news = [];
+        foreach ($collected['news'] as $entry) {
+            $timestamp = (int)($entry['news']['datetime'] ?? 0);
+            $news[] = new Item(
+                $this->inline((string)$entry['news']['title']),
+                (string)MarkdownUrl::fromPageUri($this->newsUri($site, $language, $entry['uid'])),
+                $this->newsDescription($entry['news']),
+                $timestamp > 0 ? (new \DateTimeImmutable())->setTimestamp($timestamp) : null,
+                true,
+            );
+        }
+        $sections['news'] = new Section('News', $news);
+        return $sections;
+    }
+
+    /**
+     * @param list<array{uid: int, section: int, page: array<string, mixed>}> $entries
+     * @return list<Item>
+     */
+    private function pageItems(array $entries, Site $site, SiteLanguage $language): array
+    {
+        $items = [];
+        foreach ($entries as $entry) {
+            $items[] = new Item(
+                $this->inline((string)$entry['page']['title']),
+                (string)MarkdownUrl::fromPageUri($this->pageUri($site, $language, $entry['uid'])),
+                $this->description($entry['page']),
+                null,
+                true,
+            );
+        }
+        return $items;
+    }
+
+    private function section(Section $section): string
+    {
+        if ($section->items === []) {
             return '';
         }
-        $lines = ['## ' . $title, ''];
-        foreach ($entries as $entry) {
-            $description = $this->description($entry['page']);
-            $lines[] = '- [' . $this->inline((string)$entry['page']['title']) . ']('
-                . MarkdownUrl::fromPageUri($this->pageUri($site, $language, $entry['uid'])) . ')'
+        $lines = ['## ' . $section->title, ''];
+        foreach ($section->items as $item) {
+            $description = $this->inline($item->description);
+            $lines[] = '- [' . $this->inline($item->title) . '](' . $item->url . ')'
+                . ($item->date !== null ? ' (' . $item->date->format('Y-m-d') . ')' : '')
                 . ($description !== '' ? ': ' . $description : '');
-        }
-        return implode("\n", $lines);
-    }
-
-    /** @param list<array{uid: int, news: array<string, mixed>}> $entries */
-    private function newsSection(array $entries, Site $site, SiteLanguage $language): string
-    {
-        if ($entries === []) {
-            return '';
-        }
-        $lines = ['## News', ''];
-        foreach ($entries as $entry) {
-            $description = $this->newsDescription($entry['news']);
-            $date = (int)($entry['news']['datetime'] ?? 0) > 0 ? ' (' . date('Y-m-d', (int)$entry['news']['datetime']) . ')' : '';
-            $lines[] = '- [' . $this->inline((string)$entry['news']['title']) . '](' . MarkdownUrl::fromPageUri($this->newsUri($site, $language, $entry['uid'])) . ')'
-                . $date . ($description !== '' ? ': ' . $description : '');
         }
         return implode("\n", $lines);
     }
@@ -263,7 +312,7 @@ final class LlmsTxtBuilder
     /** The page's .md through the web server itself, so it is rendered like any frontend request. */
     private function fetchMarkdown(Site $site, UriInterface $markdownUri): ?string
     {
-        $url = SiteConfig::loopbackUrl($site) . $markdownUri->getPath();
+        $url = SiteConfig::loopbackUrl($site) . $markdownUri->getPath() . ($markdownUri->getQuery() !== '' ? '?' . $markdownUri->getQuery() : '');
         try {
             $response = $this->requestFactory->request($url, 'GET', [
                 'headers' => [

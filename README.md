@@ -93,6 +93,95 @@ llms.txt and llms-full.txt are cached in `cache_sillmstxt` (group "pages") and t
 page, so editing a page or its content regenerates them. The intro is part of the cache key.
 If a page cannot be fetched for llms-full.txt, the file is kept for 5 minutes only.
 
+## PSR-14 events
+
+Other extensions can change what is generated, e.g. list all records of a plugin that shows only one result page.
+
+- `Woit\SiLlmsTxt\Event\ModifyLlmsTxtEvent` – before llms.txt / llms-full.txt is built (cache miss only):
+  add, change, reorder or remove sections and items, set title and intro, add cache tags or a lifetime.
+  Section ids: `pages`, `section-<uid>` (top-level page), `articles`, `news`.
+- `Woit\SiLlmsTxt\Event\ModifyMarkdownEvent` – for every `.md` response of a page or news record:
+  change frontmatter and Markdown, read the rendered HTML, or answer 404 with `setNotFound()`.
+
+```php
+use TYPO3\CMS\Core\Attribute\AsEventListener;
+use Woit\SiLlmsTxt\Event\ModifyLlmsTxtEvent;
+use Woit\SiLlmsTxt\LlmsTxt\Item;
+use Woit\SiLlmsTxt\LlmsTxt\Section;
+
+final class AddRecordsToLlmsTxt
+{
+    #[AsEventListener]
+    public function __invoke(ModifyLlmsTxtEvent $event): void
+    {
+        $event->addSection('records', new Section('Records'), 'news');
+        foreach ($this->repository->findAll() as $record) {
+            $event->addItem('records', new Item($record->getTitle(), $record->getUrl(), $record->getTeaser()));
+        }
+        $event->addCacheTags('tx_myext_record');
+    }
+}
+```
+
+Added items are not part of llms-full.txt unless they bring their Markdown (`markdown`) or set `includeInFull`
+(then `url` must be a `.md` URL of the same site, it is fetched like a page).
+
+Show all records on a list page that renders only the first result page:
+
+```php
+use TYPO3\CMS\Core\Attribute\AsEventListener;
+use Woit\SiLlmsTxt\Event\ModifyMarkdownEvent;
+
+final class ListAllRecordsInMarkdown
+{
+    private const LIST_PAGE_UID = 42;
+
+    #[AsEventListener]
+    public function __invoke(ModifyMarkdownEvent $event): void
+    {
+        if ($event->getTable() !== 'pages' || (int)($event->getRecord()['l10n_parent'] ?: $event->getRecord()['uid']) !== self::LIST_PAGE_UID) {
+            return;
+        }
+        $lines = [];
+        foreach ($this->repository->findAll() as $record) {
+            $lines[] = '- [' . $record->getTitle() . '](' . $record->getUrl() . '): ' . $record->getTeaser();
+        }
+        $event->setMarkdown($event->getMarkdown() . "\n\n## All records\n\n" . implode("\n", $lines));
+    }
+}
+```
+
+Describe the record shown on a detail page, and answer 404 without a record:
+
+```php
+use TYPO3\CMS\Core\Attribute\AsEventListener;
+use Woit\SiLlmsTxt\Event\ModifyMarkdownEvent;
+
+final class DescribeDetailRecord
+{
+    private const DETAIL_PAGE_UID = 43;
+
+    #[AsEventListener]
+    public function __invoke(ModifyMarkdownEvent $event): void
+    {
+        if ($event->getTable() !== 'pages' || (int)($event->getRecord()['l10n_parent'] ?: $event->getRecord()['uid']) !== self::DETAIL_PAGE_UID) {
+            return;
+        }
+        $arguments = $event->getRequest()->getAttribute('routing')->getArguments();
+        $record = $this->repository->findByUid((int)($arguments['tx_myext_pi1']['record'] ?? 0));
+        if ($record === null) {
+            $event->setNotFound();
+            return;
+        }
+        $frontmatter = $event->getFrontmatter();
+        $frontmatter['title'] = $record->getTitle();
+        $frontmatter['description'] = $record->getTeaser();
+        $frontmatter['canonical'] = $record->getUrl();
+        $event->setFrontmatter($frontmatter);
+    }
+}
+```
+
 ## Site settings
 
 | Setting | Default |

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0 (unreleased)
+
+- PSR-14 event `ModifyLlmsTxtEvent`: listeners add, change, reorder or remove sections and items of
+  llms.txt / llms-full.txt (e.g. records of their own extension), set title and intro, add cache tags and a lifetime.
+- PSR-14 event `ModifyMarkdownEvent`: listeners change frontmatter and Markdown of every `.md` response,
+  get the rendered HTML, or answer 404.
+- llms-full.txt follows the section order of llms.txt (pages, top-level sections, articles, news).
+- llms-full.txt keeps the query string when fetching a `.md` URL, so news detail URLs without route enhancer are no longer missing.
+- Internal: `LlmsTxtBuilder::pageDocument()` / `newsDocument()` replaced by `pageFrontmatter()` / `newsFrontmatter()`.
+
 ## 1.0.7 (2026-10-13)
 
 Tested on a second TYPO3 14.3 site with a different theme; these fixes make the Markdown work for other templates:
