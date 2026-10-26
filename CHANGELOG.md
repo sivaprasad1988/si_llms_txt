@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 (unreleased)
+## 1.1.0 (2026-10-26)
 
 - PSR-14 event `ModifyLlmsTxtEvent`: listeners add, change, reorder or remove sections and items of
   llms.txt / llms-full.txt (e.g. records of their own extension), set title and intro, add cache tags and a lifetime.
